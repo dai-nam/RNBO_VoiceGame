@@ -5,8 +5,8 @@ var amplitude = 0;
 var lowerFreqBound = 90;
 var upperFreqBound = 300;
 
-var lowerAmpBound = 0.1;
-var upperAmpBound = 0.4;
+var lowerAmpBound = 0.05;
+var upperAmpBound = 0.15;
 
 var easing = 0.008;
 
@@ -256,6 +256,7 @@ class Aim{
     else
     {
       let scaledX = map(frequency, lowerFreqBound, upperFreqBound, 0, width, true);
+      //console.log(amplitude);
       let scaledY = map(amplitude, lowerAmpBound, upperAmpBound, 0, playAreaHeight, true);
 
       let targetX = scaledX;
@@ -266,7 +267,7 @@ class Aim{
       let dy = targetY - this.y;
       this.y += dy * easing;
 
-      console.log(this.x+"        "+this.y);
+      //console.log(this.x+"        "+this.y);
 
     }
   }
