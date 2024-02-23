@@ -258,9 +258,11 @@ function startScreen()
     textAlign(CENTER);
     textSize(40);
     text("Start", width/2, height/2+10);
+    textSize(30);
+    text("Use your voice to hit the Targets!", width/2, height/2+90);
+    textSize(20);
+    text("X-Axis = Frequency, Y-Axis = Amplitude", width/2, height/2+130);
     pop();
-
-    //todo Anleitung x: Frequenz, Y Amplitude
 }
 
 
@@ -271,7 +273,6 @@ function spawnNewTarget()
 
 function mousePressed()
 {
-
     if(!gameStarted)
     {
       gameStarted = mouseX > width/2-50 && mouseX < width/2+50 && mouseY > height/2-50 && mouseY < height/2+50;
@@ -344,6 +345,7 @@ class Aim{
       this.timeSinceLastHit += deltaTime;
       target.loading(this.timeSinceLastHit);
       
+      //todo: Wenn man im Kreis ist mehr smoothing bzw. das Target hält das Aim ein wenig fest
       if(this.timeSinceLastHit >= loadTime)
       {
         this.timeSinceLastHit = 0;
