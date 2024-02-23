@@ -3,12 +3,12 @@ var frequency = 0;
 var amplitude = 0;
 
 var lowerFreqBound = 90;
-var upperFreqBound = 300;
+var upperFreqBound = 400;
 
 var lowerAmpBound = 0.05;
-var upperAmpBound = 0.15;
+var upperAmpBound = 0.5;
 
-var easing = 0.008;
+var easing = 0.02;
 
 
 var target = null;
@@ -17,8 +17,9 @@ var score = 0;
 var aim;
 var loadTime = 1000;
 let playAreaHeight;
-let textBarHeight = 30;
+let textBarHeight = 50;
 let ypadding = 10;
+let gameStarted = false;
 
 
 //-------------------------rnbo-----------------------------
@@ -26,7 +27,7 @@ let ypadding = 10;
 let context;
 let device;
 let gainNode;
-let started = false;
+let audioStarted = false;
 let stream;
 let mediarecorder;
 let chunks;
@@ -46,14 +47,14 @@ async function loadRnbo( ){
   gainNode.connect(device.node);
   //print all rnbo param Parameters
   device.parameters.forEach(parameter => {
-  console.log(parameter.id);
-  console.log(parameter.name);
+  console.log(parameter.id+": "+parameter.value);
+  //console.log(parameter.name);
   });
 
 
   device.messageEvent.subscribe((ev) => {
 
-    if (ev.tag === "out3") 
+    if (ev.tag === "out4") 
     {
       frequency = ev.payload[0];
       amplitude = ev.payload[1];
@@ -66,9 +67,7 @@ loadRnbo();
 
 async function startAudio()
 {
-  if (started) return;
-
-  started = true;
+  audioStarted = true;
   context.resume();
   console.log("Audio started. Samplerate: "+context.sampleRate);
 }
@@ -143,6 +142,8 @@ async function stopMicrophone()
     chunks = [];
 
   };
+
+  gameStarted = false;
 }
 
 
@@ -157,6 +158,7 @@ function setup() {
 
     spawnNewTarget();
     aim = new Aim(-100, -100);
+
 }
 
 function displayTextBar()
@@ -175,23 +177,27 @@ function displayTextBar()
 function createButtons() {
   var yoffset = 18;
 
-  let button1 = createButton('Play');
-  button1.position(300, height - yoffset);
+
 
   let button2 = createButton('Stop');
-  button2.position(400, height - yoffset);
+  button2.position(200, height - yoffset);
 
   let button3 = createButton('Play Recording');
-  button3.position(500, height- yoffset );
+  button3.position(250, height- yoffset );
 
-  let gainSlider = createSlider(0, 300);
-  gainSlider.position(600, height- yoffset);
+  let gainSlider = createSlider(0, 350);
+  gainSlider.position(350, height- yoffset);
   gainSlider.size(100);
  // gainSlider.value = 100;
 
-  button1.mousePressed(() => {
-    recordIntoBuffer();
-  });
+ //todo: hier die parameter minimum und maximum attribute referenzieren (irgendwie aus dem json)
+  let freqSlider = createSlider(50, 200);
+  freqSlider.position(500, height-yoffset);
+  freqSlider.size(100);
+
+  let ampSlider = createSlider(50, 500);
+  ampSlider.position(650, height-yoffset);
+  ampSlider.size(100);
 
   button2.mousePressed(() => {
     stopMicrophone();
@@ -205,17 +211,58 @@ function createButtons() {
     var val = map(gainSlider.value(), 0, 300, 0.0, 3.0, true)
     gainNode.gain.value = val;
   });
+
+  freqSlider.input(() => {
+    const param = device.parametersById.get("freqSmooth");
+    param.value = freqSlider.value();
+    console.log("FreqSmooth: "+param.value);
+  });
+
+  
+  ampSlider.input(() => {
+    const param = device.parametersById.get("ampSmooth");
+    param.value = ampSlider.value();
+    console.log("AmpSmooth: "+param.value);
+  });
 }
 
 
 function draw() {
     background(220);
     displayTextBar();
+
+
+    if(!gameStarted)
+    {
+      startScreen();
+      return;
+    };
+
     target.display();
     aim.updatePosition();
     aim.display();
     aim.checkIfTargetHit();
   }
+
+function startScreen()
+{
+    push()
+    fill(255, 0, 0, 75);
+    rect(0, 0, width, height);
+    
+    fill(0,0,255);
+    noStroke();
+    rectMode(CENTER);
+    rect(width/2, height/2, 300, 100);
+    fill(255);
+    textAlign(CENTER);
+    textSize(40);
+    text("Start", width/2, height/2+10);
+    pop();
+
+    //todo Anleitung x: Frequenz, Y Amplitude
+}
+
 
 function spawnNewTarget()
 {
@@ -224,7 +271,18 @@ function spawnNewTarget()
 
 function mousePressed()
 {
-    startAudio();
+
+    if(!gameStarted)
+    {
+      gameStarted = mouseX > width/2-50 && mouseX < width/2+50 && mouseY > height/2-50 && mouseY < height/2+50;
+      score = 0;
+    }
+    if(gameStarted && !audioStarted)
+    {
+      startAudio();
+      recordIntoBuffer();
+    }
+
 }
 
 
@@ -341,8 +399,8 @@ class LoadingCircle
     constructor(x, y, timePassed, targetRad){
     this.x = x;
     this.y = y;
-    this.rad = 10
-    this.c = color(255, 0, 0);
+    this.rad = 12;
+    this.c = color(0, 255, 0);
     this.offset = this.calculateOffset(timePassed);
     this.targetRad = targetRad;
   }
